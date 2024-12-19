@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas Pinball Game</title>
+    <style>
+        body {
+            font-family: "Comic Sans MS", "Lucida Handwriting", cursive;
+            background: linear-gradient(45deg, #d24d57, #e8c547);
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+    
+        h1 {
+            margin: 20px;
+            text-shadow: 2px 2px 10px #fff;
+        }
+    
+        #game-container {
+            display: inline-block;
+            margin-top: 20px;
+            border: 8px solid #fff;
+            box-shadow: 0 0 20px #fff;
+            border-radius: 10px;
+        }
+    
+        canvas {
+            display: block;
+            background: linear-gradient(180deg, #4c1d1d, #1b0202);
+            background-image: url('https://www.transparenttextures.com/patterns/brick-wall-dark.png');
+            border-radius: 10px;
+        }
+    
+        #score {
+            font-size: 24px;
+            margin-top: 10px;
+            text-shadow: 1px 1px 5px #fff;
+        }
+    </style>
+    
+</head>
+<body>
+    <h1>🎄 Christmas Pinball Game 🎅</h1>
+    <div id="game-container">
+        <canvas id="pinballCanvas" width="600" height="800"></canvas>
+    </div>
+    <p id="score">Score: 0</p>
+    <script>
+        const canvas = document.getElementById('pinballCanvas');
+        const ctx = canvas.getContext('2d');
+    
+        // Ball properties
+        let ballX = canvas.width / 2;
+        let ballY = canvas.height - 50;
+        let ballRadius = 10;
+        let dx = 4;
+        let dy = -4;
+    
+        // Paddle properties
+        const paddleWidth = 120;
+        const paddleHeight = 10;
+        let paddleX = (canvas.width - paddleWidth) / 2;
+        const paddleY = canvas.height - 30;
+        let paddleMove = 0;
+    
+        // Game state
+        let gameStarted = false;
+    
+        // Bumpers
+        const bumpers = [
+            { x: 100, y: 150, radius: 25, color: "#ff0000" },
+            { x: 200, y: 250, radius: 30, color: "#00ff00" },
+            { x: 300, y: 150, radius: 25, color: "#0000ff" },
+            { x: 150, y: 350, radius: 35, color: "#ffd700" },
+            { x: 350, y: 300, radius: 35, color: "#ff1493" },
+            { x: 250, y: 450, radius: 30, color: "#8a2be2" },
+            { x: 400, y: 400, radius: 30, color: "#00ced1" },
+        ];
+    
+        // Score
+        let score = 0;
+    
+        // Event listeners
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+    
+        function handleKeyDown(e) {
+            if (e.key === 'ArrowLeft') paddleMove = -7;
+            if (e.key === 'ArrowRight') paddleMove = 7;
+            if (e.key === ' ') startGame();
+        }
+    
+        function handleKeyUp(e) {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') paddleMove = 0;
+        }
+    
+        // Reset the game state
+        function resetGame() {
+            ballX = canvas.width / 2;
+            ballY = canvas.height - 50;
+            dx = 4;
+            dy = -4;
+            score = 0;
+            gameStarted = false;
+            paddleX = (canvas.width - paddleWidth) / 2;
+            document.getElementById('score').innerText = `Score: ${score}`;
+        }
+    
+        // Start the game
+        function startGame() {
+            if (!gameStarted) {
+                gameStarted = true;
+            }
+        }
+    
+        // Draw the ball
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#f7ff00";
+            ctx.fill();
+            ctx.closePath();
+        }
+    
+        // Draw the paddle
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, paddleY, paddleWidth, paddleHeight);
+            ctx.fillStyle = "#ff4500";
+            ctx.fill();
+            ctx.closePath();
+        }
+    
+        // Draw bumpers
+        function drawBumpers() {
+            bumpers.forEach(bumper => {
+                ctx.beginPath();
+                ctx.arc(bumper.x, bumper.y, bumper.radius, 0, Math.PI * 2);
+                ctx.fillStyle = bumper.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+    
+        // Detect bumper collision
+        function bumperCollision() {
+            bumpers.forEach(bumper => {
+                const distance = Math.sqrt((ballX - bumper.x) ** 2 + (ballY - bumper.y) ** 2);
+                if (distance < ballRadius + bumper.radius) {
+                    dx = -dx;
+                    dy = -dy;
+                    score += 10;
+                    document.getElementById('score').innerText = `Score: ${score}`;
+                }
+            });
+        }
+    
+        // Collision detection
+        function collisionDetection() {
+            if (ballX + dx > canvas.width - ballRadius || ballX + dx < ballRadius) {
+                dx = -dx;
+            }
+    
+            if (ballY + dy < ballRadius) {
+                dy = -dy;
+            } else if (ballY + dy > canvas.height - ballRadius) {
+                if (ballX > paddleX && ballX < paddleX + paddleWidth) {
+                    dy = -dy;
+                } else {
+                    // Ball hits the bottom, reset game without the message box
+                    resetGame();
+                }
+            }
+        }
+    
+        // Update paddle position
+        function updatePaddle() {
+            paddleX += paddleMove;
+    
+            // Prevent paddle from going out of bounds
+            paddleX = Math.max(0, Math.min(paddleX, canvas.width - paddleWidth));
+        }
+    
+        // Update ball position
+        function updateBall() {
+            ballX += dx;
+            ballY += dy;
+        }
+    
+        // Game loop
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+            drawBall();
+            drawPaddle();
+            drawBumpers();
+    
+            if (gameStarted) {
+                updateBall();
+            }
+    
+            updatePaddle();
+            collisionDetection();
+            bumperCollision();
+    
+            requestAnimationFrame(draw);
+        }
+    
+        resetGame();
+        draw();
+    </script>      
+    
+</body>
+</html>
